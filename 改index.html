@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的北京之行 · AI 点评</title>
+<style>
+  :root{
+    --red:#b03a2e; --red-light:#d9534f; --gold:#c8963e; --cream:#fdf8f3;
+    --ink:#2b2b2b; --muted:#8a7f76; --line:#e8ddd2; --ok:#2e7d5b; --warn:#c47b1e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--cream); color:var(--ink); line-height:1.6; padding:0 0 40px;
+    max-width:640px; margin:0 auto;
+  }
+  header{
+    background:linear-gradient(160deg,#b03a2e 0%,#8d2b21 100%);
+    color:#fff; padding:26px 22px 22px; border-radius:0 0 22px 22px;
+    box-shadow:0 6px 18px rgba(176,58,46,.22);
+  }
+  .kicker{font-size:12px;letter-spacing:.22em;opacity:.8;margin-bottom:8px}
+  h1{font-size:25px;font-weight:700;letter-spacing:.02em}
+  .sub{font-size:13px;opacity:.85;margin-top:8px}
+  main{padding:18px 16px 0}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px;margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,.03)}
+  .row{display:flex;gap:10px;margin-bottom:12px}
+  .row .field{flex:1}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;letter-spacing:.05em}
+  input[type=text]{
+    width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;min-height:46px;
+    font-size:15px;font-family:inherit;background:#fdfbf8;color:var(--ink);
+  }
+  input[type=text]:focus{outline:none;border-color:var(--red-light);background:#fff}
+  .qitem{margin-bottom:14px}
+  .qhead{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+  .num{width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-weight:600}
+  .qtitle{font-size:14px;font-weight:600}
+  .hint{font-size:12px;color:var(--muted);margin-left:30px;margin-bottom:5px}
+  .qitem input{font-size:15px}
+  .qitem input::placeholder{color:#c9bfb6;font-size:14px}
+  button.primary{
+    width:100%;padding:15px;border:none;border-radius:14px;background:var(--red);color:#fff;
+    font-size:16.5px;font-weight:600;letter-spacing:.08em;font-family:inherit;
+    box-shadow:0 5px 14px rgba(176,58,46,.28);cursor:pointer;
+  }
+  button.primary:active{transform:translateY(1px)}
+  button.ghost{
+    width:100%;padding:11px;border:1px dashed var(--line);border-radius:12px;background:transparent;
+    color:var(--muted);font-size:13.5px;font-family:inherit;margin-top:10px;cursor:pointer;
+  }
+  #result{display:none;margin-top:6px}
+  .score-band{
+    display:flex;align-items:center;justify-content:space-between;
+    background:linear-gradient(120deg,#fff6ec,#fdece2);border:1px solid #f0dcc9;
+    border-radius:16px;padding:16px;margin-bottom:14px;
+  }
+  .score-num{font-size:40px;font-weight:800;color:var(--red);line-height:1}
+  .score-num small{font-size:14px;font-weight:500;color:var(--muted);margin-left:3px}
+  .stars{font-size:15px;letter-spacing:2px;color:var(--gold);margin-top:4px}
+  .score-label{font-size:13px;color:var(--muted);margin-top:2px}
+  .seal{width:62px;height:62px;border:2.5px solid var(--red);border-radius:50%;color:var(--red);font-size:30px;font-weight:700;display:flex;align-items:center;justify-content:center;opacity:.9}
+  .fb{display:flex;gap:10px;padding:11px 12px;border-radius:12px;font-size:13.5px;margin-bottom:9px;align-items:flex-start}
+  .fb.ok{background:#f0f8f4;color:#1f5f45}
+  .fb.warn{background:#fdf4e7;color:#8a5312}
+  .fb.bad{background:#fdeeed;color:#8f2a20}
+  .fb .tag{font-weight:700;flex:0 0 auto}
+  .fb .txt{flex:1}
+  .fb .txt em{font-style:normal;font-weight:600}
+  .verdict{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;font-size:14px;color:#4a4038;margin-top:4px}
+  .verdict b{color:var(--red)}
+  .fb .orig{display:block;font-size:13px;font-weight:500;color:#6d635b;margin:2px 0 3px}
+  .ai-tips{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}
+  .ai-tips h3{font-size:14px;color:var(--red);margin-bottom:10px;letter-spacing:.05em}
+  .ai-tips ul{list-style:none}
+  .ai-tips li{font-size:13px;color:#4a4038;line-height:1.75;padding:7px 0;border-top:1px dashed var(--line)}
+  .ai-tips li:first-child{border-top:none;padding-top:10px}
+  .ai-tips b{color:#8d2b21}
+  .ai-tips ruby{margin:0 1px;ruby-align:start}
+  .ai-tips ruby rt{font-size:7.5px;color:#a0938a;font-weight:400;letter-spacing:-.3px;line-height:1.1}
+  .passport{
+    margin-top:16px;background:#fff;border:2px solid var(--red);border-radius:16px;overflow:hidden;position:relative;
+  }
+  .passport .top{background:var(--red);color:#fff;padding:10px 16px;font-size:13px;letter-spacing:.18em;display:flex;justify-content:space-between}
+  .passport .body{padding:16px}
+  .passport .who{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .passport .who b{font-size:16px;color:var(--ink);margin-right:12px}
+  .passport .lines{font-size:13px;color:#4a4038;line-height:1.9;margin-top:8px;border-top:1px dashed var(--line);padding-top:10px}
+  .stamp{
+    position:absolute;right:14px;bottom:12px;width:76px;height:76px;border:2.5px solid var(--red);
+    border-radius:50%;color:var(--red);display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;letter-spacing:.12em;transform:rotate(-14deg);opacity:.85;line-height:1.25;text-align:center;
+  }
+  .tips{margin-top:16px;font-size:12px;color:var(--muted);line-height:1.8;padding:0 4px}
+  .tips b{color:#6d635b}
+  .sm-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px;letter-spacing:.03em}
+  .screen{display:none}
+  .screen.on{display:block}
+  .sm2{
+    display:flex;align-items:center;gap:16px;width:100%;padding:22px 18px;
+    border-radius:18px;border:1px solid var(--line);background:#fdfbf8;
+    cursor:pointer;font-family:inherit;text-align:left;margin-bottom:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,.03);
+  }
+  .sm2:last-of-type{margin-bottom:0}
+  .sm2 .ico{flex:0 0 auto;font-size:36px;line-height:1}
+  .sm2 b{display:block;font-size:18px;color:var(--ink)}
+  .sm2 i{display:block;font-style:normal;font-size:13px;color:var(--muted);margin-top:4px}
+  .sm2:active{transform:translateY(1px)}
+  .demo-link{
+    display:block;width:100%;margin-top:16px;padding:13px;border-radius:14px;
+    border:1px dashed var(--red-light);background:#fff;color:var(--red);
+    font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;text-align:center;
+  }
+  .back{
+    display:inline-block;margin:2px 0 10px;font-size:12.5px;color:var(--muted);
+    background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 0;
+  }
+  .sm-note{
+    display:none;margin-bottom:12px;padding:11px 13px;border-radius:12px;
+    background:#fdf4e7;color:#8a5312;font-size:12.5px;line-height:1.7;
+  }
+  footer{text-align:center;font-size:11.5px;color:#b3a79c;margin-top:26px;padding:0 20px;line-height:1.8}
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">北 京 旅 行 手 册 · 终 页</div>
+  <h1>我的北京之行</h1>
+  <div class="sub">提交你的旅行计划，看看能得几颗星，AI 还会为你生成一份旅行建议。</div>
+</header>
+
+<main>
+  <div id="screen1" class="screen on">
+    <div class="card">
+      <div class="sm-title">怎么提交你的旅行计划？选一种方式：</div>
+      <button class="sm2" onclick="pickMode('photo')"><span class="ico">📷</span><span><b>拍照上传</b><i>拍下写好的手册，AI 识别点评</i></span></button>
+      <button class="sm2" onclick="pickMode('voice')"><span class="ico">🎤</span><span><b>语音介绍</b><i>读出你的计划，AI 听你发音</i></span></button>
+      <button class="sm2" onclick="pickMode('text')"><span class="ico">✏️</span><span><b>打字填空</b><i>直接写下五句话</i></span></button>
+      <button class="demo-link" onclick="demoFromHome()">先看示范：安娜的旅行计划 →</button>
+    </div>
+  </div>
+
+  <div id="screen2" class="screen">
+    <button class="back" onclick="backToModes()">← 返回，换一种提交方式</button>
+    <div class="sm-note" id="smNote"></div>
+    <div class="card">
+    <div class="row">
+      <div class="field"><label>我的名字</label><input type="text" id="name"></div>
+      <div class="field"><label>学号</label><input type="text" id="cls" inputmode="numeric"></div>
+    </div>
+
+    <div class="qitem">
+      <div class="qhead"><span class="num">1</span><span class="qtitle">🏯 想去哪</span></div>
+      <div class="hint">我既想去____，又想去____。</div>
+      <input type="text" id="s1">
+    </div>
+
+    <div class="qitem">
+      <div class="qhead"><span class="num">2</span><span class="qtitle">🍁 怎么样</span></div>
+      <div class="hint">北京的秋天既____，又____。</div>
+      <input type="text" id="s2">
+    </div>
+
+    <div class="qitem">
+      <div class="qhead"><span class="num">3</span><span class="qtitle">✈️🚄 怎么去</span></div>
+      <div class="hint">我们既可以____，又可以____。</div>
+      <input type="text" id="s3">
+    </div>
+
+    <div class="qitem">
+      <div class="qhead"><span class="num">4</span><span class="qtitle">👍 夸夸它</span></div>
+      <div class="hint">坐____既____，又____。</div>
+      <input type="text" id="s4">
+    </div>
+
+    <div class="qitem">
+      <div class="qhead"><span class="num">5</span><span class="qtitle">🍡🦆 自由说 · 我想吃什么</span></div>
+      <div class="hint">用「既……，又……」说说北京的美食。</div>
+      <input type="text" id="s5">
+    </div>
+
+    <button class="primary" onclick="check()">提 交 · 看 点 评</button>
+    <button class="ghost" onclick="demoAnna()">看示范：安娜的旅行计划 →</button>
+  </div>
+
+  <div id="result">
+    <div class="score-band">
+      <div>
+        <div class="score-label">你的旅行计划</div>
+        <div class="score-num"><span id="score">0</span><small>/ 100</small></div>
+        <div class="stars" id="stars"></div>
+      </div>
+      <div class="seal">京</div>
+    </div>
+    <div id="fbs"></div>
+    <div class="verdict" id="verdict"></div>
+    <div class="ai-tips" id="aiTips"></div>
+
+    <div class="passport">
+      <div class="top"><span>进 京 通 行 证</span><span>BEIJING</span></div>
+      <div class="body">
+        <div class="who"><b id="pname">旅行者</b><span id="pcls"></span></div>
+        <div class="lines" id="plines"></div>
+        <div class="stamp">进京<br>成功</div>
+      </div>
+    </div>
+    <div class="tips">
+      <b>小提示：</b>截图这张通行证，发到班级群里，就能看到同学的计划啦。
+    </div>
+  </div>
+  </div><!-- /screen2 -->
+
+  <footer>
+    北京旅行手册 · 课堂配套页面<br>
+    智能点评与旅行建议即时生成，离线可用
+  </footer>
+</main>
+
+<script>
+const GOOD = ['便宜','方便','好吃','好喝','舒适','省时','漂亮','安静','美丽','干净','现代','好玩','有意思','快','新鲜','热闹','古老','美','好','近','暖和'];
+const BAD  = ['贵','脏','吵','累','远','难吃','麻烦','旧','冷','挤','破','慢','难','贵了','无聊'];
+
+const TIPS = [
+  {k:['故宫'],   t:'🏮 故宫：要先在手机上约，用小程序“故宫博物院”。星期一不开门。11 月到 3 月，票 40 元。'},
+  {k:['天安门'], t:'🏛️ 天安门广场：不要钱，但要先约。小程序叫“天安门广场预约参观”。要带护照，包要检查。'},
+  {k:['国家博物馆','国博'], t:'🖼️ 国家博物馆：不要钱，要先约。用小程序“国家博物馆”。星期一不开门。'},
+  {k:['天坛'],   t:'⛩️ 天坛：用小程序“天坛”买票。11 月到 3 月，票 10 元；想进大殿，买 28 元的联票。大殿星期一不开门。'},
+  {k:['颐和园'], t:'🚣 颐和园：用小程序“颐和园”买票，不用急。11 月到 3 月票 20 元；想上佛香阁，买 50 元的票。公园很大，风大，多穿一件。'},
+  {k:['长城','八达岭'], t:'🧱 长城：用小程序“八达岭长城”约。18 岁以下不要钱，大人 35 元。坐高铁到八达岭长城站，半小时就到。'},
+  {k:['豆汁'],   t:'🥛 豆汁：去天坛北门，老磁器口、尹三这两家最好。一碗两三块，和焦圈一起吃。尹三早上 5 点半开门，中午就卖完了。'},
+  {k:['冰糖葫芦','糖葫芦'], t:'🍭 冰糖葫芦：前门大街、什刹海、南锣鼓巷都有，不用排队，边走边吃。'},
+  {k:['烤鸭'],   t:'🦆 烤鸭：全聚德一只 298 元，还要给服务费；便宜坊一只 168 元，一个人一百二左右。吃饭时间人多，早点去。'},
+  {k:['炸酱面'], t:'🍜 炸酱面：什刹海的方砖厂 69 号最有名，一个人三十多块。中午人多，要等半小时。'},
+  {k:['涮肉','涮羊肉'], t:'🍲 涮肉：聚宝源、南门涮肉北京人常去，一个人一百块左右。11 月吃最好。'},
+  {k:['驴打滚'], t:'🍡 驴打滚：牛街的白记最好，十几块。外面是黄豆面，里面是豆沙，很软。'},
+  {k:['豌豆黄'], t:'🟨 豌豆黄：护国寺小吃就有，几块钱一块。凉凉的，很甜。'},
+  {k:['面茶'],   t:'🥣 面茶：护国寺小吃 6 到 8 元一碗。不要搅，转着碗喝，上面那层最香。'},
+  {k:['京八件'], t:'🎁 京八件：去有“三禾”两个字的稻香村，25 到 40 元一斤，带回家送人很好。'},
+  {k:['门钉肉饼'], t:'🥟 门钉肉饼：宝瑞家的 7 元一个。皮很薄，里面有很多汤，先喝汤再吃，小心烫。'},
+  {k:['三不沾'], t:'🍮 三不沾：同和居的菜，要等一会儿。不粘盘子、不粘筷子、不粘牙，所以叫这个名字。'},
+  {k:['山楂糕'], t:'🍒 山楂糕：护国寺小吃、牛街都有，几块钱一块。酸酸的，吃完饭吃很好。'},
+  {k:['飞机'],   t:'✈️ 坐飞机：机票越早买越便宜。'},
+  {k:['高铁','火车'], t:'🚄 坐高铁：在 12306 买票。去长城的高铁，从北京北站、清河站出发。'},
+];
+const TIP_DEFAULT = '💡 带好学生证，很多地方对学生不要钱，或者只要一半的钱。11 月北京风大，帽子和围巾要带。';
+const TIP_DEFAULT2 = '🧣 11 月北京早上很冷，只有 0 度；白天 10 度左右。要穿厚外套。';
+
+// 拼音只标“不是大纲词”的字词；下面这些字学生已学过，任何词里都不再注音
+const NO_PY = '小八全便宜';   // 这些字学生已学过：小程序、八达岭、全聚德、便宜坊 里不再注音
+
+const PY = {
+  '国家博物馆':'guó jiā bó wù guǎn', '门钉肉饼':'mén dīng ròu bǐng', '南锣鼓巷':'nán luó gǔ xiàng',
+  '老磁器口':'lǎo cí qì kǒu', '清河站':'qīng hé zhàn', '博物院':'bó wù yuàn', '颐和园':'yí hé yuán',
+  '佛香阁':'fó xiāng gé', '天安门':'tiān ān mén', '天坛':'tiān tán', '豆汁':'dòu zhī',
+  '焦圈':'jiāo quān', '炸酱面':'zhá jiàng miàn', '涮羊肉':'shuàn yáng ròu', '涮肉':'shuàn ròu',
+  '驴打滚':'lǘ dǎ gǔn', '豌豆黄':'wān dòu huáng', '面茶':'miàn chá', '京八件':'jīng bā jiàn',
+  '三不沾':'sān bù zhān', '山楂糕':'shān zhā gāo', '什刹海':'shí chà hǎi', '稻香村':'dào xiāng cūn',
+  '牛街':'niú jiē', '护国寺':'hù guó sì', '聚宝源':'jù bǎo yuán', '同和居':'tóng hé jū',
+  '八达岭':'bā dá lǐng', '全聚德':'quán jù dé', '便宜坊':'pián yi fāng', '小程序':'xiǎo chéng xù',
+  '宝瑞':'bǎo ruì', '尹三':'yǐn sān', '白记':'bái jì', '三禾':'sān hé', '联票':'lián piào',
+  '服务费':'fú wù fèi', '学生证':'xué shēng zhèng', '豆沙':'dòu shā', '黄豆面':'huáng dòu miàn',
+  '大殿':'dà diàn', '薄':'báo', '搅':'jiǎo', '粘':'zhān', '斤':'jīn', '预约':'yù yuē'
+};
+
+// 整词注音；遇到 NO_PY 里的字跳过不注音，相邻的注音字合成一个 ruby，避免字距被撑开
+function rubyWord(w, py){
+  const syl = py.split(' ');
+  const chars = w.split('');
+  let out = '', buf = '', bufPy = [];
+  const flush = () => {
+    if (buf) { out += '<ruby>' + buf + '<rt>' + bufPy.join(' ') + '</rt></ruby>'; buf = ''; bufPy = []; }
+  };
+  chars.forEach((c, i) => {
+    if (NO_PY.indexOf(c) > -1) { flush(); out += c; }
+    else { buf += c; bufPy.push(syl[i] || ''); }
+  });
+  flush();
+  return out;
+}
+
+function addPinyin(html){
+  // 一次扫描替换：长词优先，且不会出现“长城”被套进“八达岭长城”里造成重复注音
+  const keys = Object.keys(PY).sort((a, b) => b.length - a.length);
+  const re = new RegExp('(' + keys.join('|') + ')', 'g');
+  return html.replace(re, m => rubyWord(m, PY[m]));
+}
+
+function hit(list, s){ return list.filter(w => s.indexOf(w) > -1); }
+
+function analyze(raw, idx){
+  const s = (raw || '').trim();
+  if (!s) return {pts:0, level:'bad', msg:'这一句还没写。'};
+
+  const hasJi = s.indexOf('既') > -1, hasYou = s.indexOf('又') > -1;
+  if (!hasJi || !hasYou) {
+    return {pts:8, level:'warn', msg:'这一句里没有用上「既……，又……」，试试把它套进去。'};
+  }
+
+  const posYou = s.indexOf('又');
+  const after = s.slice(posYou + 1);
+
+  // 第二个主语是否出现
+  const m = after.match(/^\s*(我|你|他|她|它|我们|你们|他们|她们)/);
+  if (m) {
+    return {pts:12, level:'warn', msg:'「又」后面不用再说主语（<em>'+m[1]+'</em>）。主语要一样，只说一次。'};
+  }
+
+  // 前后是否同类
+  const before = s.slice(0, posYou);
+  const g1 = hit(GOOD, before), b1 = hit(BAD, before);
+  const g2 = hit(GOOD, after),  b2 = hit(BAD, after);
+  if ((g1.length && b2.length) || (b1.length && g2.length)) {
+    const w1 = (g1[0] || b1[0]), w2 = (g2[0] || b2[0]);
+    return {pts:14, level:'warn', msg:'错误：前面说<em>'+w1+'</em>是好的，后面说<em>'+w2+'</em>是不好的。前后要都是好的，或者都是不好的。'};
+  }
+
+  // 是否用了完整结构
+  const full = /既.{1,12}又.{1,12}/.test(s);
+  if (!full) return {pts:14, level:'warn', msg:'句子有点短，试着把两件事都说完整。'};
+
+  return {pts:20, level:'ok', msg:'很好，句子完整，主语一样，前后都是好的。'};
+}
+
+function check(){
+  const items = [
+    {id:'s1', name:'想去哪'},
+    {id:'s2', name:'怎么样'},
+    {id:'s3', name:'怎么去'},
+    {id:'s4', name:'夸夸它'},
+    {id:'s5', name:'自由说'}
+  ];
+  let total = 0, done = 0, warns = 0;
+  const box = document.getElementById('fbs');
+  box.innerHTML = '';
+  const goodLines = [];
+
+  items.forEach((it, i) => {
+    const val = document.getElementById(it.id).value;
+    const r = analyze(val, i);
+    total += r.pts;
+    if ((val||'').trim()) done++;
+    if (r.level === 'warn') warns++;
+    const div = document.createElement('div');
+    div.className = 'fb ' + r.level;
+    const orig = (val || '').trim();
+    div.innerHTML = '<span class="tag">' + (r.level === 'ok' ? '✓' : '!') + '</span>' +
+                    '<span class="txt"><b>' + it.name + '：</b>' +
+                    (orig ? '<span class="orig">“' + orig + '”</span>' : '') +
+                    r.msg + '</span>';
+    box.appendChild(div);
+    if (r.level === 'ok' && val.trim()) goodLines.push(val.trim());
+  });
+
+  const score = Math.round(total);
+  document.getElementById('score').textContent = score;
+  document.getElementById('stars').textContent = '★'.repeat(score >= 90 ? 5 : score >= 75 ? 4 : score >= 60 ? 3 : 2) +
+                                                 '☆'.repeat(5 - (score >= 90 ? 5 : score >= 75 ? 4 : score >= 60 ? 3 : 2));
+
+  let v = '';
+  const correct = done - warns;
+  if (done === 0) v = '还没有写句子。选一句开始吧，写完一句就有一分收获。';
+  else if (score >= 90 && warns === 0) v = '<b>一百个赞！</b>你的五句话都用对了「既……，又……」，而且前后内容都是好的、主语一样。可以拿着这张通行证向全班介绍了。';
+  else if (score >= 90) v = '<b>非常好，' + correct + ' 个句子都对了</b>，只有' + (warns === 1 ? '一个小错误' : warns + '个小错误') + '：注意「既……，又……」前面的内容和后面的内容，要都是好的，或者都是不好的；主语要一样，只说一次。改一改，就能拿满星！';
+  else if (score >= 75) v = '<b>很不错。</b>大部分句子都对了，还有 ' + warns + ' 处可以再改一改。改完再来一次，就能拿满星。';
+  else if (score >= 60) v = '<b>基本成型。</b>先注意「前后内容」和「主语」这两个最容易出错的地方，分数会立刻上去。';
+  else v = '<b>别着急。</b>先把一句写对：想两件你都想做的事，套进「我既……，又……」，一句一句来。';
+
+  document.getElementById('verdict').innerHTML = v;
+
+  // 专属旅行建议：根据学生句子里的关键词生成
+  const allText = items.map(it => document.getElementById(it.id).value || '').join(' ');
+  const matched = TIPS.filter(t => t.k.some(k => allText.indexOf(k) > -1));
+  const tipList = matched.map(t => t.t);
+  if (!matched.length) tipList.push(TIP_DEFAULT);
+  tipList.push(TIP_DEFAULT2);
+  document.getElementById('aiTips').innerHTML =
+    '<h3>AI 为你准备的旅行建议</h3><ul>' +
+    tipList.map(t => '<li>' + addPinyin(t) + '</li>').join('') + '</ul>';
+
+  document.getElementById('pname').textContent = document.getElementById('name').value || '旅行者';
+  const num = (document.getElementById('cls').value || '').trim();
+  document.getElementById('pcls').textContent = num ? '· 学号 ' + num.replace(/号\s*$/, '') + '号' : '';
+  document.getElementById('plines').innerHTML = goodLines.slice(0, 5).map(t => '· ' + t).join('<br>') || '· （还没有写好的句子）';
+
+  const res = document.getElementById('result');
+  res.style.display = 'block';
+  res.scrollIntoView({behavior:'smooth', block:'start'});
+
+  try {
+    localStorage.setItem('bj_plan', JSON.stringify({
+      name: document.getElementById('name').value,
+      score: score,
+      time: Date.now()
+    }));
+  } catch(e){}
+}
+
+function pickMode(m){
+  document.getElementById('screen1').classList.remove('on');
+  document.getElementById('screen2').classList.add('on');
+  const note = document.getElementById('smNote');
+  if (m === 'photo') {
+    note.innerHTML = '📷 <b>拍照上传</b>（课后开放）：把写好的手册拍下来，AI 识别后给点评。<br>课上时间有限，先用下面的<b>打字填空</b>写好五句话。';
+    note.style.display = 'block';
+  } else if (m === 'voice') {
+    note.innerHTML = '🎤 <b>语音介绍</b>（课后开放）：读出你的旅行计划，AI 听你的发音，告诉你哪个字要再练。<br>课上先用下面的<b>打字填空</b>。';
+    note.style.display = 'block';
+  } else {
+    note.style.display = 'none';
+  }
+  window.scrollTo({top:0});
+}
+
+function backToModes(){
+  document.getElementById('screen2').classList.remove('on');
+  document.getElementById('screen1').classList.add('on');
+  document.getElementById('smNote').style.display = 'none';
+  document.getElementById('result').style.display = 'none';
+  window.scrollTo({top:0});
+}
+
+function demoFromHome(){
+  document.getElementById('screen1').classList.remove('on');
+  document.getElementById('screen2').classList.add('on');
+  document.getElementById('smNote').style.display = 'none';
+  demoAnna();
+}
+
+function demoAnna(){
+  document.getElementById('name').value = '安娜';
+  document.getElementById('cls').value = '4';
+  document.getElementById('s1').value = '我既想去故宫，又想去长城。';
+  document.getElementById('s2').value = '北京的秋天既安静，又美丽。';
+  document.getElementById('s3').value = '我们既可以坐飞机，又可以坐高铁。';
+  document.getElementById('s4').value = '坐飞机既省时，又贵。';
+  document.getElementById('s5').value = '我既想吃冰糖葫芦，又想吃北京烤鸭。';
+  check();
+}
+</script>
+</body>
+</html>
